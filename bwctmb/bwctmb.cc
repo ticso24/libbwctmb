@@ -142,6 +142,7 @@ void
 Modbus::reconnect() {
 	bus = new Network::Net();
 	bus->connect_tcp(IP, Port);
+	bus->settimeout(1000);
 	bus->nodelay(1);
 }
 
