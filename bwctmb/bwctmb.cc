@@ -80,7 +80,7 @@ Modbus::do_packet() {
 	header[3] = 0x00;
 	header[4] = 0x00;
 	header[5] = packetlen;
-	if (!bus.isinit()) {
+	if (!bus.isinit() || !bus->opened()) {
 		reconnect();
 		ntry = 1;
 	}
@@ -90,7 +90,7 @@ Modbus::do_packet() {
 
 retry:
 	res = bus->write(spacket, sizeof(header) + packetlen);
-	if (res != sizeof(header) + packetlen)
+	if (res != (ssize_t)sizeof(header) + packetlen)
 		goto failure;
 
 	res = bus->read(header, sizeof(header));
@@ -230,15 +230,16 @@ Modbus::write_coils(uint8_t address, uint16_t num, SArray<bool> val) {
 	packet[1] = WRITE_MULTIPLE_COILS;
 	packet[2] = num >> 8;
 	packet[3] = num & 0xff;
-	packet[4] = val.max >> 8;
-	packet[5] = val.max & 0xff;
+	packet[4] = (val.max + 1) >> 8;
+	packet[5] = (val.max + 1) & 0xff;
+	packet[6] = (val.max + 7) / 8;
 	for (i = 0; i <= val.max; i++) {
 		if (i & 0x7 == 0)
-			packet[6 + i / 8] = 0;
+			packet[7 + i / 8] = 0;
 		if (val[i])
-			packet[6 + i / 8] |= 1 << (i & 0x7);
+			packet[7 + i / 8] |= 1 << (i & 0x7);
 	}
-	packetlen = 6 + (val.max + 7) / 8;
+	packetlen = 7 + (val.max + 7) / 8;
 	do_packet();
 }
 
@@ -326,13 +327,14 @@ Modbus::write_registers(uint8_t address, uint16_t num, SArray<uint16_t> val) {
 	packet[1] = WRITE_MULTIPLE_REGISTERS;
 	packet[2] = num >> 8;
 	packet[3] = num & 0xff;
-	packet[4] = val.max >> 8;
-	packet[5] = val.max & 0xff;
+	packet[4] = (val.max + 1) >> 8;
+	packet[5] = (val.max + 1) & 0xff;
+	packet[6] = (val.max + 1) * 2;
 	for (i = 0; i <= val.max; i++) {
-		packet[6 + 2 * i] = val[i] >> 8;
-		packet[7 + 2 * i] = val[i] & 0xff;
+		packet[7 + 2 * i] = val[i] >> 8;
+		packet[8 + 2 * i] = val[i] & 0xff;
 	}
-	packetlen = 8 + 2 * val.max;
+	packetlen = 7 + 2 * (val.max + 1);
 	do_packet();
 }
 
