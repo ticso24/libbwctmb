@@ -445,11 +445,14 @@ Modbus::bwct_fw_update(uint8_t address, const String& fwpath) {
 
 	firmware.open(fwpath);
 
-	packet[0] = address;
-	packet[1] = VENDOR_BOOTLOADER;
-	packetlen = 2;
-	do_packet();
-	// TODO: catch exceptions to allow a retry
+	try {
+		packet[0] = address;
+		packet[1] = VENDOR_BOOTLOADER;
+		packetlen = 2;
+		do_packet();
+	} catch (std::exception& e) {
+		fprintf(stderr, "Error: %s - ignoring\n", e.what());
+	}
 
 	while ((pagesize = firmware.read(pagedata, 64)) > 0) {
 		packet[0] = address;
