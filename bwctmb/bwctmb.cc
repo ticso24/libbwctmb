@@ -123,7 +123,7 @@ retry:
 		case 0x0b:
 			throw Error(String("modbus: gateway target device failed to respond"), packet[2]);
 		default:
-			throw Error(String("generic modbus error ") + packet[2], packet[2]);
+			throw Error(String("modbus: unknown error ") + packet[2], packet[2]);
 		}
 	}
 	return;
