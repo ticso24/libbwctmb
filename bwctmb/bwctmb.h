@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001 - 2004 Bernd Walter Computer Technology
+ * Copyright (c) 2001 - 2005 Bernd Walter Computer Technology
  * http://www.bwct.de
  * All rights reserved.
  *
@@ -45,6 +45,7 @@ private:
 	String IP;
 	String Port;
 	a_ptr<Network::Net> bus;
+	Mutex mtx_bus;
 
 	void do_packet();
 	void reconnect();

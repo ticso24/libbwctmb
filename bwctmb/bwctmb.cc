@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001 - 2004 Bernd Walter Computer Technology
+ * Copyright (c) 2001 - 2005 Bernd Walter Computer Technology
  * http://www.bwct.de
  * All rights reserved.
  *
@@ -148,15 +148,25 @@ Modbus::reconnect() {
 
 bool
 Modbus::read_discrete_input(uint8_t address, uint16_t num) {
-	packet[0] = address;
-	packet[1] = READ_DISCRETE_INPUTS;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = 0x00;
-	packet[5] = 0x01;
-	packetlen = 6;
-	do_packet();
-	return packet[3];
+	bool ret;
+
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = READ_DISCRETE_INPUTS;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = 0x00;
+		packet[5] = 0x01;
+		packetlen = 6;
+		do_packet();
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
+	}
+	ret = packet[3];
+	mtx_bus.unlock();
+	return ret;
 }
 
 SArray<bool>
@@ -164,35 +174,51 @@ Modbus::read_discrete_inputs(uint8_t address, uint16_t num, uint16_t count) {
 	SArray<bool> ret;
 	int i;
 
-	packet[0] = address;
-	packet[1] = READ_DISCRETE_INPUTS;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = count >> 8;
-	packet[5] = count & 0xff;
-	packetlen = 6;
-	do_packet();
-	for (i = 0; i < count; i++) {
-		if (packet[3 + i / 8] & (1 << (i & 0x07)))
-			ret[i] = 1;
-		else
-			ret[i] = 0;
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = READ_DISCRETE_INPUTS;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = count >> 8;
+		packet[5] = count & 0xff;
+		packetlen = 6;
+		do_packet();
+		for (i = 0; i < count; i++) {
+			if (packet[3 + i / 8] & (1 << (i & 0x07)))
+				ret[i] = 1;
+			else
+				ret[i] = 0;
+		}
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
 	}
-
+	mtx_bus.unlock();
 	return ret;
 }
 
 bool
 Modbus::read_coil(uint8_t address, uint16_t num) {
-	packet[0] = address;
-	packet[1] = READ_COILS;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = 0x00;
-	packet[5] = 0x01;
-	packetlen = 6;
-	do_packet();
-	return packet[3];
+	bool ret;
+
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = READ_COILS;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = 0x00;
+		packet[5] = 0x01;
+		packetlen = 6;
+		do_packet();
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
+	}
+	ret = packet[3];
+	mtx_bus.unlock();
+	return ret;
 }
 
 SArray<bool>
@@ -200,68 +226,98 @@ Modbus::read_coils(uint8_t address, uint16_t num, uint16_t count) {
 	SArray<bool> ret;
 	int i;
 
-	packet[0] = address;
-	packet[1] = READ_COILS;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = count >> 8;
-	packet[5] = count & 0xff;
-	packetlen = 6;
-	do_packet();
-	for (i = 0; i < count; i++) {
-		if (packet[3 + i / 8] & (1 << (i & 0x07)))
-			ret[i] = 1;
-		else
-			ret[i] = 0;
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = READ_COILS;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = count >> 8;
+		packet[5] = count & 0xff;
+		packetlen = 6;
+		do_packet();
+		for (i = 0; i < count; i++) {
+			if (packet[3 + i / 8] & (1 << (i & 0x07)))
+				ret[i] = 1;
+			else
+				ret[i] = 0;
+		}
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
 	}
-
+	mtx_bus.unlock();
 	return ret;
 }
 
 void
 Modbus::write_coil(uint8_t address, uint16_t num, bool val) {
-	packet[0] = address;
-	packet[1] = WRITE_SINGLE_COIL;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = (val) ? 0xff : 0x00;
-	packet[5] = 0x00;
-	packetlen = 6;
-	do_packet();
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = WRITE_SINGLE_COIL;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = (val) ? 0xff : 0x00;
+		packet[5] = 0x00;
+		packetlen = 6;
+		do_packet();
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
+	}
+	mtx_bus.unlock();
 }
 
 void
 Modbus::write_coils(uint8_t address, uint16_t num, SArray<bool> val) {
 	uint16_t i;
 
-	packet[0] = address;
-	packet[1] = WRITE_MULTIPLE_COILS;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = (val.max + 1) >> 8;
-	packet[5] = (val.max + 1) & 0xff;
-	packet[6] = (val.max + 7) / 8;
-	for (i = 0; i <= val.max; i++) {
-		if (i & 0x7 == 0)
-			packet[7 + i / 8] = 0;
-		if (val[i])
-			packet[7 + i / 8] |= 1 << (i & 0x7);
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = WRITE_MULTIPLE_COILS;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = (val.max + 1) >> 8;
+		packet[5] = (val.max + 1) & 0xff;
+		packet[6] = (val.max + 7) / 8;
+		for (i = 0; i <= val.max; i++) {
+			if (i & 0x7 == 0)
+				packet[7 + i / 8] = 0;
+			if (val[i])
+				packet[7 + i / 8] |= 1 << (i & 0x7);
+		}
+		packetlen = 7 + (val.max + 7) / 8;
+		do_packet();
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
 	}
-	packetlen = 7 + (val.max + 7) / 8;
-	do_packet();
+	mtx_bus.unlock();
 }
 
 uint16_t
 Modbus::read_input_register(uint8_t address, uint16_t num) {
-	packet[0] = address;
-	packet[1] = READ_INPUT_REGISTERS;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = 0x00;
-	packet[5] = 0x01;
-	packetlen = 6;
-	do_packet();
-	return ((uint16_t)packet[3] << 8 | packet[4]);
+	uint16_t ret;
+
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = READ_INPUT_REGISTERS;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = 0x00;
+		packet[5] = 0x01;
+		packetlen = 6;
+		do_packet();
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
+	}
+	mtx_bus.unlock();
+	ret = (uint16_t)packet[3] << 8 | packet[4];
+	return ret;
 }
 
 SArray<uint16_t>
@@ -269,31 +325,48 @@ Modbus::read_input_registers(uint8_t address, uint16_t num, uint16_t count) {
 	SArray<uint16_t> ret;
 	int i;
 
-	packet[0] = address;
-	packet[1] = READ_INPUT_REGISTERS;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = count >> 8;
-	packet[5] = count & 0xff;
-	packetlen = 6;
-	do_packet();
-	for (i = 0; i < count; i++) {
-		ret[i] = (uint16_t)packet[3 + 2 * i] << 8 | packet[4 + 2 * i];
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = READ_INPUT_REGISTERS;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = count >> 8;
+		packet[5] = count & 0xff;
+		packetlen = 6;
+		do_packet();
+		for (i = 0; i < count; i++) {
+			ret[i] = (uint16_t)packet[3 + 2 * i] << 8 | packet[4 + 2 * i];
+		}
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
 	}
+	mtx_bus.unlock();
 	return ret;
 }
 
 uint16_t
 Modbus::read_holding_register(uint8_t address, uint16_t num) {
-	packet[0] = address;
-	packet[1] = READ_HOLDING_REGISTERS;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = 0x00;
-	packet[5] = 0x01;
-	packetlen = 6;
-	do_packet();
-	return ((uint16_t)packet[3] << 8 | packet[4]);
+	uint16_t ret;
+
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = READ_HOLDING_REGISTERS;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = 0x00;
+		packet[5] = 0x01;
+		packetlen = 6;
+		do_packet();
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
+	}
+	ret = (uint16_t)packet[3] << 8 | packet[4];
+	mtx_bus.unlock();
+	return ret;
 }
 
 SArray<uint16_t>
@@ -301,49 +374,70 @@ Modbus::read_holding_registers(uint8_t address, uint16_t num, uint16_t count) {
 	SArray<uint16_t> ret;
 	int i;
 
-	packet[0] = address;
-	packet[1] = READ_HOLDING_REGISTERS;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = count >> 8;
-	packet[5] = count & 0xff;
-	packetlen = 6;
-	do_packet();
-	for (i = 0; i < count; i++) {
-		ret[i] = (uint16_t)packet[3 + 2 * i] << 8 | packet[4 + 2 * i];
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = READ_HOLDING_REGISTERS;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = count >> 8;
+		packet[5] = count & 0xff;
+		packetlen = 6;
+		do_packet();
+		for (i = 0; i < count; i++) {
+			ret[i] = (uint16_t)packet[3 + 2 * i] << 8 | packet[4 + 2 * i];
+		}
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
 	}
+	mtx_bus.unlock();
 	return ret;
 }
 
 void
 Modbus::write_register(uint8_t address, uint16_t num, uint16_t val) {
-	packet[0] = address;
-	packet[1] = WRITE_SINGLE_REGISTER;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = val >> 8;
-	packet[5] = val & 0xff;
-	packetlen = 6;
-	do_packet();
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = WRITE_SINGLE_REGISTER;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = val >> 8;
+		packet[5] = val & 0xff;
+		packetlen = 6;
+		do_packet();
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
+	}
+	mtx_bus.unlock();
 }
 
 void
 Modbus::write_registers(uint8_t address, uint16_t num, SArray<uint16_t> val) {
 	int i;
 
-	packet[0] = address;
-	packet[1] = WRITE_MULTIPLE_REGISTERS;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = (val.max + 1) >> 8;
-	packet[5] = (val.max + 1) & 0xff;
-	packet[6] = (val.max + 1) * 2;
-	for (i = 0; i <= val.max; i++) {
-		packet[7 + 2 * i] = val[i] >> 8;
-		packet[8 + 2 * i] = val[i] & 0xff;
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = WRITE_MULTIPLE_REGISTERS;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = (val.max + 1) >> 8;
+		packet[5] = (val.max + 1) & 0xff;
+		packet[6] = (val.max + 1) * 2;
+		for (i = 0; i <= val.max; i++) {
+			packet[7 + 2 * i] = val[i] >> 8;
+			packet[8 + 2 * i] = val[i] & 0xff;
+		}
+		packetlen = 7 + 2 * (val.max + 1);
+		do_packet();
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
 	}
-	packetlen = 7 + 2 * (val.max + 1);
-	do_packet();
+	mtx_bus.unlock();
 }
 
 SArray<uint16_t>
@@ -351,25 +445,32 @@ Modbus::read_write_registers(uint8_t address, uint16_t rnum, uint16_t count, uin
 	SArray<uint16_t> ret;
 	int i;
 
-	packet[0] = address;
-	packet[1] = READ_HOLDING_REGISTERS;
-	packet[2] = rnum >> 8;
-	packet[3] = rnum & 0xff;
-	packet[4] = count >> 8;
-	packet[5] = count & 0xff;
-	packet[6] = wnum >> 8;
-	packet[7] = wnum & 0xff;
-	packet[8] = val.max >> 8;
-	packet[9] = val.max & 0xff;
-	for (i = 0; i <= val.max; i++) {
-		packet[10 + 2 * i] = val[i] >> 8;
-		packet[11 + 2 * i] = val[i] & 0xff;
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = READ_HOLDING_REGISTERS;
+		packet[2] = rnum >> 8;
+		packet[3] = rnum & 0xff;
+		packet[4] = count >> 8;
+		packet[5] = count & 0xff;
+		packet[6] = wnum >> 8;
+		packet[7] = wnum & 0xff;
+		packet[8] = val.max >> 8;
+		packet[9] = val.max & 0xff;
+		for (i = 0; i <= val.max; i++) {
+			packet[10 + 2 * i] = val[i] >> 8;
+			packet[11 + 2 * i] = val[i] & 0xff;
+		}
+		packetlen = 12 + 2 * val.max;
+		do_packet();
+		for (i = 0; i < count; i++) {
+			ret[i] = (uint16_t)packet[3 + 2 * i] << 8 | packet[4 + 2 * i];
+		}
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
 	}
-	packetlen = 12 + 2 * val.max;
-	do_packet();
-	for (i = 0; i < count; i++) {
-		ret[i] = (uint16_t)packet[3 + 2 * i] << 8 | packet[4 + 2 * i];
-	}
+	mtx_bus.unlock();
 	return ret;
 	// TODO: fall back to split read/write
 }
@@ -380,46 +481,67 @@ Modbus::identification(uint8_t address, uint8_t num) {
 	int i;
 	char tmpstr[2];
 
-	packet[0] = address;
-	packet[1] = ENCAPSULATED_INTERFACE_TRANSPORT;
-	packet[2] = READ_DEVICE_IDENTIFICATION;
-	packet[3] = 4;
-	packet[4] = num;
-	packetlen = 5;
-	do_packet();
-	tmpstr[1] = 0;
-	for (i = 0; i < packet[9]; i++) {
-		tmpstr[0] = packet[10 + i];
-		ret += tmpstr;
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = ENCAPSULATED_INTERFACE_TRANSPORT;
+		packet[2] = READ_DEVICE_IDENTIFICATION;
+		packet[3] = 4;
+		packet[4] = num;
+		packetlen = 5;
+		do_packet();
+		tmpstr[1] = 0;
+		for (i = 0; i < packet[9]; i++) {
+			tmpstr[0] = packet[10 + i];
+			ret += tmpstr;
+		}
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
 	}
+	mtx_bus.unlock();
 	return ret;
 }
 
 void
 Modbus::mask_write_register(uint8_t address, uint16_t num, uint16_t andval, uint16_t orval) {
-	packet[0] = address;
-	packet[1] = MASK_WRITE_REGISTER;
-	packet[2] = num >> 8;
-	packet[3] = num & 0xff;
-	packet[4] = andval >> 8;
-	packet[5] = andval & 0xff;
-	packet[6] = orval >> 8;
-	packet[7] = orval & 0xff;
-	packetlen = 8;
-	do_packet();
-	// TODO: fall back to read-modify-write
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = MASK_WRITE_REGISTER;
+		packet[2] = num >> 8;
+		packet[3] = num & 0xff;
+		packet[4] = andval >> 8;
+		packet[5] = andval & 0xff;
+		packet[6] = orval >> 8;
+		packet[7] = orval & 0xff;
+		packetlen = 8;
+		do_packet();
+		// TODO: fall back to read-modify-write
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
+	}
+	mtx_bus.unlock();
 }
 
 void
 Modbus::bwct_set_address(uint8_t address, uint8_t naddress, String serial) {
-	packet[0] = address;
-	packet[1] = VENDOR_SET_ADDRESS;
-	packet[2] = naddress;
-	if (serial.length() != 10)
-		throw ::Error(String("Serial has wrong length"));
-	bcopy(serial.c_str(), &packet[3], 10);
-	packetlen = 13;
-	do_packet();
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = VENDOR_SET_ADDRESS;
+		packet[2] = naddress;
+		if (serial.length() != 10)
+			throw ::Error(String("Serial has wrong length"));
+		bcopy(serial.c_str(), &packet[3], 10);
+		packetlen = 13;
+		do_packet();
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
+	}
+	mtx_bus.unlock();
 }
 
 String
@@ -428,19 +550,26 @@ Modbus::bwct_read_magcard(uint8_t address) {
 	int i;
 	uint16_t numbits;
 
-	packet[0] = address;
-	packet[1] = VENDOR_READ_MAGCARD;
-	packetlen = 2;
-	do_packet();
-	numbits = packet[2] << 8 | packet[3];
-	for (i = 0; i < numbits; i++) {
-		if (packet[4 + (i / 8)] &
-		    (0x80 >> (i & 7))) {
-			ret += "0";
-		} else {
-			ret += "1";
+	mtx_bus.lock();
+	try {
+		packet[0] = address;
+		packet[1] = VENDOR_READ_MAGCARD;
+		packetlen = 2;
+		do_packet();
+		numbits = packet[2] << 8 | packet[3];
+		for (i = 0; i < numbits; i++) {
+			if (packet[4 + (i / 8)] &
+			    (0x80 >> (i & 7))) {
+				ret += "0";
+			} else {
+				ret += "1";
+			}
 		}
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
 	}
+	mtx_bus.unlock();
 	return ret;
 }
 
@@ -453,35 +582,42 @@ Modbus::bwct_fw_update(uint8_t address, const String& fwpath) {
 
 	firmware.open(fwpath);
 
+	mtx_bus.lock();
 	try {
+		try {
+			packet[0] = address;
+			packet[1] = VENDOR_BOOTLOADER;
+			packetlen = 2;
+			do_packet();
+		} catch (std::exception& e) {
+			fprintf(stderr, "Error: %s - ignoring\n", e.what());
+		}
+
+		while ((pagesize = firmware.read(pagedata, 64)) > 0) {
+			packet[0] = address;
+			packet[1] = VENDOR_PAGEDATA;
+			packet[2] = fwaddress >> 8;
+			packet[3] = fwaddress & 0xff;
+			packetlen = 4;
+			bcopy(pagedata, &packet[4], pagesize);
+			packetlen += 64;
+			fwaddress += 64;
+			do_packet();
+
+			packet[0] = address;
+			packet[1] = VENDOR_WRITE_PAGE;
+			packetlen = 2;
+			do_packet();
+		};
+
 		packet[0] = address;
-		packet[1] = VENDOR_BOOTLOADER;
+		packet[1] = VENDOR_RESET;
 		packetlen = 2;
 		do_packet();
-	} catch (std::exception& e) {
-		fprintf(stderr, "Error: %s - ignoring\n", e.what());
+	} catch (...) {
+		mtx_bus.unlock();
+		throw;
 	}
-
-	while ((pagesize = firmware.read(pagedata, 64)) > 0) {
-		packet[0] = address;
-		packet[1] = VENDOR_PAGEDATA;
-		packet[2] = fwaddress >> 8;
-		packet[3] = fwaddress & 0xff;
-		packetlen = 4;
-		bcopy(pagedata, &packet[4], pagesize);
-		packetlen += 64;
-		fwaddress += 64;
-		do_packet();
-
-		packet[0] = address;
-		packet[1] = VENDOR_WRITE_PAGE;
-		packetlen = 2;
-		do_packet();
-	};
-
-	packet[0] = address;
-	packet[1] = VENDOR_RESET;
-	packetlen = 2;
-	do_packet();
+	mtx_bus.unlock();
 }
 
