@@ -10,9 +10,9 @@
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([libbwctmb],[0.1],[bernd@bwct.de])
+AC_INIT([libbwctmb],[0.2],[bernd@bwct.de])
 AC_CONFIG_SRCDIR(bwctmb/bwctmb.h)
-AM_INIT_AUTOMAKE(libbwctmb, 0.1)
+AM_INIT_AUTOMAKE(libbwctmb, 0.2)
 AM_CONFIG_HEADER(bwctmb/config.h)
 
 AC_AIX
