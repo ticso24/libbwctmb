@@ -41,16 +41,13 @@ class Modbus : public Base {
 private:
 	uint8_t packet[256];
 	uint8_t packetlen;
+	uint8_t retries;
 	String IP;
 	String Port;
 	a_ptr<Network::Net> bus;
 
 	void do_packet();
-	void reconnect() {
-		bus = new Network::Net();
-		bus->connect_tcp(IP, Port);
-		bus->nodelay(1);
-	}
+	void reconnect();
 
 public:
 	class Error : public ::Error {
@@ -73,6 +70,7 @@ public:
 	Modbus(const String& nIP, const String& nPort) {
 		IP = nIP;
 		Port = nPort;
+		retries = 4;
 	}
 	bool read_discrete_input(uint8_t address, uint16_t num);
 	SArray<bool> read_discrete_inputs(uint8_t address, uint16_t num, uint16_t count);

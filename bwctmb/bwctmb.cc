@@ -129,7 +129,9 @@ retry:
 	return;
 
 failure:
-	if (ntry == 0) {
+	if (ntry < retries) {
+		usleep(100);
+		ntry++;
 		reconnect();
 		goto retry;
 	}
@@ -137,6 +139,12 @@ failure:
 	bus->write(header, sizeof(header));
 }
 
+void
+Modbus::reconnect() {
+	bus = new Network::Net();
+	bus->connect_tcp(IP, Port);
+	bus->nodelay(1);
+}
 
 bool
 Modbus::read_discrete_input(uint8_t address, uint16_t num) {
