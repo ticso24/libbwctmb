@@ -165,7 +165,7 @@ Modbus::read_discrete_inputs(uint8_t address, uint16_t num, uint16_t count) {
 	packetlen = 6;
 	do_packet();
 	for (i = 0; i < count; i++) {
-		if (packet[3 + i / 8] & (1 << (count & 0x07)))
+		if (packet[3 + i / 8] & (1 << (i & 0x07)))
 			ret[i] = 1;
 		else
 			ret[i] = 0;
@@ -201,7 +201,7 @@ Modbus::read_coils(uint8_t address, uint16_t num, uint16_t count) {
 	packetlen = 6;
 	do_packet();
 	for (i = 0; i < count; i++) {
-		if (packet[3 + i / 8] & (1 << (count & 0x07)))
+		if (packet[3 + i / 8] & (1 << (i & 0x07)))
 			ret[i] = 1;
 		else
 			ret[i] = 0;
