@@ -33,7 +33,6 @@
  */
 
 // TODO: Do read timeout
-// TODO: make thread save
 // TODO: add interleaving support
 // TODO: properly handle broadcast packets and don't parse results
 
