@@ -11,5 +11,5 @@
 
 aclocal19 -I aclocal && \
 autoheader259 && \
-automake19 --foreign --add-missing --copy && \
+automake19 --foreign --add-missing --copy -f && \
 autoconf259
