@@ -32,7 +32,10 @@
  * $Rev$
  */
 
-// TODO properly handle broadcast packets and don't parse results
+// TODO: Do read timeout
+// TODO: make thread save
+// TODO: add interleaving support
+// TODO: properly handle broadcast packets and don't parse results
 
 #include <bwctmb/bwctmb.h>
 
@@ -66,6 +69,7 @@
 void
 Modbus::do_packet() {
 	uint8_t header[6];
+	uint8_t spacket[300];
 	ssize_t res;
 	int ntry;
 
@@ -76,18 +80,17 @@ Modbus::do_packet() {
 	header[3] = 0x00;
 	header[4] = 0x00;
 	header[5] = packetlen;
-//	if (!bus.isinit()) {
+	if (!bus.isinit()) {
 		reconnect();
 		ntry = 1;
-//	}
+	}
+
+	bcopy(header, &spacket[0], sizeof(header));
+	bcopy(packet, &spacket[sizeof(header)], packetlen);
 
 retry:
-	res = bus->write(header, sizeof(header));
-	if (res != sizeof(header))
-		goto failure;
-
-	res = bus->write(packet, packetlen);
-	if (res != packetlen)
+	res = bus->write(spacket, sizeof(header) + packetlen);
+	if (res != sizeof(header) + packetlen)
 		goto failure;
 
 	res = bus->read(header, sizeof(header));
