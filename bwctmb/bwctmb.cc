@@ -135,7 +135,6 @@ failure:
 		goto retry;
 	}
 	throw ::Error(String("TCP connection failure"));
-	bus->write(header, sizeof(header));
 }
 
 void
