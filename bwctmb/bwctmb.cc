@@ -280,14 +280,14 @@ Modbus::write_coils(uint8_t address, uint16_t num, SArray<bool> val) {
 		packet[3] = num & 0xff;
 		packet[4] = (val.max + 1) >> 8;
 		packet[5] = (val.max + 1) & 0xff;
-		packet[6] = (val.max + 7) / 8;
+		packet[6] = (val.max + 8) / 8;
 		for (i = 0; i <= val.max; i++) {
 			if ((i & 0x7) == 0)
 				packet[7 + i / 8] = 0;
 			if (val[i])
 				packet[7 + i / 8] |= 1 << (i & 0x7);
 		}
-		packetlen = 7 + (val.max + 7) / 8;
+		packetlen = 7 + (val.max + 8) / 8;
 		do_packet();
 	} catch (...) {
 		mtx_bus.unlock();
