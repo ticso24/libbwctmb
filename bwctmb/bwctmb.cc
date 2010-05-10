@@ -601,11 +601,13 @@ Modbus::bwct_fw_update(uint8_t address, const String& fwpath) {
 			bcopy(pagedata, &packet[4], pagesize);
 			packetlen += 64;
 			fwaddress += 64;
+			//printf("sending pagedata %i\n", fwaddress);
 			do_packet();
 
 			packet[0] = address;
 			packet[1] = VENDOR_WRITE_PAGE;
 			packetlen = 2;
+			//printf("writing pagedata %i\n", fwaddress);
 			do_packet();
 		};
 

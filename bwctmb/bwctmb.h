@@ -52,9 +52,8 @@ private:
 
 public:
 	class Error : public ::Error {
-	private:
-		uint8_t mb_error;
 	public:
+		uint8_t mb_error;
 		Error(const String& msg, uint8_t nmb_error)
 		    : ::Error(msg.c_str()) {
 			mb_error = nmb_error;
