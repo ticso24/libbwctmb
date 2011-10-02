@@ -600,7 +600,6 @@ Modbus::bwct_fw_update(uint8_t address, const String& fwpath) {
 			packetlen = 4;
 			bcopy(pagedata, &packet[4], pagesize);
 			packetlen += 64;
-			fwaddress += 64;
 			//printf("sending pagedata %i\n", fwaddress);
 			do_packet();
 
@@ -609,6 +608,8 @@ Modbus::bwct_fw_update(uint8_t address, const String& fwpath) {
 			packetlen = 2;
 			//printf("writing pagedata %i\n", fwaddress);
 			do_packet();
+
+			fwaddress += 64;
 		};
 
 		packet[0] = address;
