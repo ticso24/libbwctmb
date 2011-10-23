@@ -580,6 +580,8 @@ Modbus::bwct_fw_update(uint8_t address, const String& fwpath) {
 	uint8_t pagedata[64];
 
 	firmware.open(fwpath);
+	int retries = 0;
+	int retries_sum = 0;
 
 	mtx_bus.lock();
 	try {
@@ -593,23 +595,40 @@ Modbus::bwct_fw_update(uint8_t address, const String& fwpath) {
 		}
 
 		while ((pagesize = firmware.read(pagedata, 64)) > 0) {
-			packet[0] = address;
-			packet[1] = VENDOR_PAGEDATA;
-			packet[2] = fwaddress >> 8;
-			packet[3] = fwaddress & 0xff;
-			packetlen = 4;
-			bcopy(pagedata, &packet[4], pagesize);
-			packetlen += 64;
-			//printf("sending pagedata %i\n", fwaddress);
-			do_packet();
+			bool written = 0;
+			retries = 0;
+			do {
+				try {
+					packet[0] = address;
+					packet[1] = VENDOR_PAGEDATA;
+					packet[2] = fwaddress >> 8;
+					packet[3] = fwaddress & 0xff;
+					packetlen = 4;
+					bcopy(pagedata, &packet[4], pagesize);
+					packetlen += 64;
+					if (retries == 0) {
+						printf("sending pagedata %i\n", fwaddress);
+					} else {
+						printf("sending pagedata %i retry %i\n", fwaddress, retries);
+					}
+					do_packet();
 
-			packet[0] = address;
-			packet[1] = VENDOR_WRITE_PAGE;
-			packetlen = 2;
-			//printf("writing pagedata %i\n", fwaddress);
-			do_packet();
+					packet[0] = address;
+					packet[1] = VENDOR_WRITE_PAGE;
+					packetlen = 2;
+					printf("writing pagedata %i\n", fwaddress);
+					do_packet();
 
-			fwaddress += 64;
+					fwaddress += 64;
+					written = true;
+				} catch (...) {
+					retries++;
+					retries_sum++;
+					if (retries > 4) {
+						throw;
+					}
+				}
+			} while (!written);
 		};
 
 		packet[0] = address;
@@ -620,6 +639,7 @@ Modbus::bwct_fw_update(uint8_t address, const String& fwpath) {
 		mtx_bus.unlock();
 		throw;
 	}
+	printf("retries %i\n", retries_sum);
 	mtx_bus.unlock();
 }
 
