@@ -394,7 +394,7 @@ Modbus::read_write_registers(uint8_t address, uint16_t rnum, uint16_t count, uin
 
 	Mutex::Guard mutex(mtx_bus);
 	packet[0] = address;
-	packet[1] = READ_HOLDING_REGISTERS;
+	packet[1] = READ_WRITE_MULTIPLE_REGISTERS;
 	packet[2] = rnum >> 8;
 	packet[3] = rnum & 0xff;
 	packet[4] = count >> 8;
