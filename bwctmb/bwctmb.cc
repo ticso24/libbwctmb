@@ -69,12 +69,15 @@ void
 Modbus::do_packet() {
 	uint8_t header[6];
 	uint8_t spacket[300];
+	static uint16_t sequence;
 	ssize_t res;
 	int ntry;
 
+	sequence++;
+
 	ntry = 0;
-	header[0] = 0x00; // transaction identifier
-	header[1] = 0x00;
+	header[0] = sequence >> 8; // transaction identifier
+	header[1] = sequence & 0xff;
 	header[2] = 0x00; // protocol identifier
 	header[3] = 0x00;
 	header[4] = 0x00;
@@ -88,19 +91,28 @@ Modbus::do_packet() {
 	bcopy(packet, &spacket[sizeof(header)], packetlen);
 
 retry:
-	res = bus->write(spacket, sizeof(header) + packetlen);
-	if (res != (ssize_t)sizeof(header) + packetlen)
-		goto failure;
+	try {
+		res = bus->write(spacket, sizeof(header) + packetlen);
+		if (res != (ssize_t)sizeof(header) + packetlen)
+			goto failure;
 
-	res = bus->read(header, sizeof(header));
-	if (res != sizeof(header))
+		res = bus->read(header, sizeof(header));
+		if (res != sizeof(header))
+			goto failure;
+		packetlen = header[5];
+		if (packetlen == 0)
+			throw ::Error(String("Invalid response"));
+		res = bus->read(packet, packetlen);
+		if (res != packetlen)
+			goto failure;
+		if (header[0] != (sequence >> 8) ||
+		    header[1] != (sequence & 0xff)) {
+			// we are off sequence and should reconnect
+			goto failure;
+		}
+	} catch (...) {
 		goto failure;
-	packetlen = header[5];
-	if (packetlen == 0)
-		throw ::Error(String("Invalid response"));
-	res = bus->read(packet, packetlen);
-	if (res != packetlen)
-		goto failure;
+	}
 	if (packet[1] & 0x80) {
 		switch (packet[2]) {
 		case 0x01:
