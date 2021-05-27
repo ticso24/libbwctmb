@@ -193,7 +193,7 @@ Modbus::read_discrete_inputs(uint8_t address, uint16_t num, uint16_t count) {
 	packet[5] = count & 0xff;
 	packetlen = 6;
 	do_packet();
-	if (packetlen != (3 + (count - 1) / 8)) {
+	if (packetlen != (4 + (count - 1) / 8)) {
 		throw ::Error(String("wrong response size"));
 	}
 	for (i = 0; i < count; i++) {
@@ -243,7 +243,7 @@ Modbus::read_coils(uint8_t address, uint16_t num, uint16_t count) {
 	packet[5] = count & 0xff;
 	packetlen = 6;
 	do_packet();
-	if (packetlen != (3 + (count - 1) / 8)) {
+	if (packetlen != (4 + (count - 1) / 8)) {
 		throw ::Error(String("wrong response size"));
 	}
 	for (i = 0; i < count; i++) {
@@ -294,7 +294,7 @@ Modbus::write_coils(uint8_t address, uint16_t num, SArray<bool> val) {
 	}
 	packetlen = 7 + (val.max + 8) / 8;
 	do_packet();
-	if (packetlen != 7 + (val.max + 8) / 8) {
+	if (packetlen != 6) {
 		throw ::Error(String("wrong response size"));
 	}
 	mutex.unlock();
@@ -313,7 +313,7 @@ Modbus::read_input_register(uint8_t address, uint16_t num) {
 	packet[5] = 0x01;
 	packetlen = 6;
 	do_packet();
-	if (packetlen != 4) {
+	if (packetlen != 5) {
 		throw ::Error(String("wrong response size"));
 	}
 	ret = (uint16_t)packet[3] << 8 | packet[4];
@@ -336,7 +336,7 @@ Modbus::read_input_registers(uint8_t address, uint16_t num, uint16_t count) {
 	packet[5] = count & 0xff;
 	packetlen = 6;
 	do_packet();
-	if (packetlen != (2 + count * 2)) {
+	if (packetlen != (3 + count * 2)) {
 		throw ::Error(String("wrong response size"));
 	}
 	for (i = 0; i < count; i++) {
@@ -360,7 +360,7 @@ Modbus::read_holding_register(uint8_t address, uint16_t num) {
 	packet[5] = 0x01;
 	packetlen = 6;
 	do_packet();
-	if (packetlen != 4) {
+	if (packetlen != 5) {
 		throw ::Error(String("wrong response size"));
 	}
 	ret = (uint16_t)packet[3] << 8 | packet[4];
@@ -383,7 +383,7 @@ Modbus::read_holding_registers(uint8_t address, uint16_t num, uint16_t count) {
 	packet[5] = count & 0xff;
 	packetlen = 6;
 	do_packet();
-	if (packetlen != (2 + count * 2)) {
+	if (packetlen != (3 + count * 2)) {
 		throw ::Error(String("wrong response size"));
 	}
 	for (i = 0; i < count; i++) {
@@ -405,7 +405,7 @@ Modbus::write_register(uint8_t address, uint16_t num, uint16_t val) {
 	packet[5] = val & 0xff;
 	packetlen = 6;
 	do_packet();
-	if (packetlen != 4) {
+	if (packetlen != 6) {
 		throw ::Error(String("wrong response size"));
 	}
 	mutex.unlock();
@@ -429,7 +429,7 @@ Modbus::write_registers(uint8_t address, uint16_t num, SArray<uint16_t> val) {
 	}
 	packetlen = 7 + 2 * (val.max + 1);
 	do_packet();
-	if (packetlen != (7 + 2 * (val.max + 1))) {
+	if (packetlen != 6) {
 		throw ::Error(String("wrong response size"));
 	}
 	mutex.unlock();
@@ -457,7 +457,7 @@ Modbus::read_write_registers(uint8_t address, uint16_t rnum, uint16_t count, uin
 	}
 	packetlen = 12 + 2 * val.max;
 	do_packet();
-	if (packetlen != (2 + count * 2)) {
+	if (packetlen != (3 + count * 2)) {
 		throw ::Error(String("wrong response size"));
 	}
 	for (i = 0; i < count; i++) {
@@ -483,9 +483,6 @@ Modbus::identification(uint8_t address, uint8_t num) {
 	packet[4] = num;
 	packetlen = 5;
 	do_packet();
-	if (packetlen != (10 + packet[9])) {
-		throw ::Error(String("wrong response size"));
-	}
 	tmpstr[1] = 0;
 	for (i = 0; i < packet[9]; i++) {
 		tmpstr[0] = packet[10 + i];
