@@ -43,7 +43,7 @@ AC_ARG_ENABLE(libbwcttest, [  --disable-libbwcttest     Do not try to compile an
   fi
 
   AC_PATH_PROG(LBWCT_CONFIG, libbwct-config, no)
-  min_libbwct_version=ifelse([$1], ,0.7,$1)
+  min_libbwct_version=ifelse([$1], ,0.17,$1)
 
   AC_MSG_CHECKING(for libbwct - version >= $min_libbwct_version)
   AC_LANG_SAVE
