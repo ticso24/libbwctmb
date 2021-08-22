@@ -69,7 +69,6 @@ void
 Modbus::do_packet() {
 	uint8_t header[6];
 	uint8_t spacket[300];
-	static uint16_t sequence;
 	ssize_t res;
 	int ntry;
 

@@ -42,6 +42,7 @@ private:
 	uint8_t packet[256];
 	uint8_t packetlen;
 	uint8_t retries;
+	uint16_t sequence;
 	String IP;
 	String Port;
 	a_ptr<Network::Net> bus;
@@ -71,6 +72,7 @@ public:
 		IP = nIP;
 		Port = nPort;
 		retries = 4;
+		sequence = getrandom();
 	}
 	bool read_discrete_input(uint8_t address, uint16_t num);
 	SArray<bool> read_discrete_inputs(uint8_t address, uint16_t num, uint16_t count);
