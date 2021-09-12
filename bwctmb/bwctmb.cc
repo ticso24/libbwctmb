@@ -32,7 +32,6 @@
  * $Rev$
  */
 
-// TODO: Do read timeout
 // TODO: add interleaving support
 // TODO: properly handle broadcast packets and don't parse results
 
