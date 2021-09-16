@@ -103,10 +103,11 @@ retry:
 		res = bus->read(packet, packetlen);
 		if (res != packetlen)
 			goto failure;
-		if (header[0] != (sequence >> 8) ||
-		    header[1] != (sequence & 0xff)) {
-			// we are off sequence and should reconnect
-			goto failure;
+		if (!ignore_sequence) {
+			if (header[0] != (sequence >> 8) ||
+			    header[1] != (sequence & 0xff)) {
+				throw ::Error(String("different sequence in response"));
+			}
 		}
 	} catch (...) {
 		goto failure;

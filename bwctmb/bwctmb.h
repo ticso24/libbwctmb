@@ -47,6 +47,7 @@ private:
 	String Port;
 	a_ptr<Network::Net> bus;
 	Mutex mtx_bus;
+	bool ignore_sequence;
 
 	void do_packet();
 	void reconnect();
@@ -73,6 +74,14 @@ public:
 		Port = nPort;
 		retries = 4;
 		sequence = getrandom();
+		ignore_sequence = false;
+	}
+
+	void set_retries(int new_retries) {
+		retries = new_retries;
+	}
+	void set_ignore_sequence(bool new_ignore_sequence) {
+		ignore_sequence = new_ignore_sequence;
 	}
 	bool read_discrete_input(uint8_t address, uint16_t num);
 	SArray<bool> read_discrete_inputs(uint8_t address, uint16_t num, uint16_t count);
