@@ -10,9 +10,9 @@
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([libbwctmb],[0.8],[bernd@bwct.de])
+AC_INIT([libbwctmb],[0.9],[bernd@bwct.de])
 AC_CONFIG_SRCDIR(bwctmb/bwctmb.h)
-AM_INIT_AUTOMAKE(libbwctmb, 0.8)
+AM_INIT_AUTOMAKE(libbwctmb, 0.9)
 AM_CONFIG_HEADER(bwctmb/config.h)
 
 AC_AIX
@@ -25,7 +25,7 @@ AC_PROG_RANLIB
 
 AC_LANG([C++])
 
-AM_PATH_LBWCT(0.9,,[
+AM_PATH_LBWCT(0.20,,[
 	echo "no"
 ])
 CXXFLAGS="$CXXFLAGS $LBWCT_CFLAGS"
