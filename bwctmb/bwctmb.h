@@ -56,13 +56,32 @@ public:
 	class Error : public ::Error {
 	public:
 		uint8_t mb_error;
-		Error(const String& msg, uint8_t nmb_error)
-		    : ::Error(msg.c_str()) {
+		uint8_t address;
+		String IP;
+		String Port;
+		Error(const String& nmsg, uint8_t nmb_error, uint8_t naddress, const String& nIP, const String& nPort, const String& nrequest = "")
+		    : ::Error("") {
 			mb_error = nmb_error;
+			address = naddress;
+			IP = nIP;
+			Port = nPort;
+			String fill;
+			if (!nrequest.empty()) {
+				fill = " ";
+			}
+			msg = S + "MB " + naddress + "@[" + nIP + "]:" + nPort + ": " + nrequest + fill + nmsg;
 		}
-		Error(const char* msg, uint8_t nmb_error)
-		    : ::Error(msg) {
+		Error(const char* nmsg, uint8_t nmb_error, uint8_t naddress, const String& nIP, const String& nPort, const String& nrequest = "")
+		    : ::Error("") {
 			mb_error = nmb_error;
+			address = naddress;
+			IP = nIP;
+			Port = nPort;
+			String fill;
+			if (!nrequest.empty()) {
+				fill = " ";
+			}
+			msg = S + "MB " + naddress + "@[" + nIP + "]:" + nPort + ": " + nrequest + fill + nmsg;
 		}
 		uint8_t get_errno() {
 			return mb_error;

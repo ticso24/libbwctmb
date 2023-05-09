@@ -68,6 +68,7 @@ void
 Modbus::do_packet() {
 	uint8_t header[6];
 	uint8_t spacket[300];
+	uint8_t address = packet[0];
 	ssize_t res;
 	int ntry;
 
@@ -99,14 +100,14 @@ retry:
 			goto failure;
 		packetlen = header[5];
 		if (packetlen == 0)
-			throw ::Error(String("Invalid response"));
+			throw Error(String("Invalid response"), 0, address, IP, Port);
 		res = bus->read(packet, packetlen);
 		if (res != packetlen)
 			goto failure;
 		if (!ignore_sequence) {
 			if (header[0] != (sequence >> 8) ||
 			    header[1] != (sequence & 0xff)) {
-				throw ::Error(String("different sequence in response"));
+				throw Error(String("different sequence in response"), 0, address, IP, Port);
 			}
 		}
 	} catch (...) {
@@ -115,25 +116,25 @@ retry:
 	if (packet[1] & 0x80) {
 		switch (packet[2]) {
 		case 0x01:
-			throw Error(String("modbus: illegal function"), packet[2]);
+			throw Error(String("illegal function"), packet[2], address, IP, Port);
 		case 0x02:
-			throw Error(String("modbus: illegal data address"), packet[2]);
+			throw Error(String("illegal data address"), packet[2], address, IP, Port);
 		case 0x03:
-			throw Error(String("modbus: illegal data value"), packet[2]);
+			throw Error(String("illegal data value"), packet[2], address, IP, Port);
 		case 0x04:
-			throw Error(String("modbus: slave device failure"), packet[2]);
+			throw Error(String("slave device failure"), packet[2], address, IP, Port);
 		case 0x05:
-			throw Error(String("modbus: acknowledge"), packet[2]);
+			throw Error(String("acknowledge"), packet[2], address, IP, Port);
 		case 0x06:
-			throw Error(String("modbus: slave device busy"), packet[2]);
+			throw Error(String("slave device busy"), packet[2], address, IP, Port);
 		case 0x08:
-			throw Error(String("modbus: memory parity error"), packet[2]);
+			throw Error(String("memory parity error"), packet[2], address, IP, Port);
 		case 0x0a:
-			throw Error(String("modbus: gateway path unavailable"), packet[2]);
+			throw Error(String("gateway path unavailable"), packet[2], address, IP, Port);
 		case 0x0b:
-			throw Error(String("modbus: gateway target device failed to respond"), packet[2]);
+			throw Error(String("gateway target device failed to respond"), packet[2], address, IP, Port);
 		default:
-			throw Error(String("modbus: unknown error ") + packet[2], packet[2]);
+			throw Error(String("unknown error ") + packet[2], packet[2], address, IP, Port);
 		}
 	}
 	return;
@@ -145,7 +146,7 @@ failure:
 		reconnect();
 		goto retry;
 	}
-	throw ::Error(String("TCP connection failure"));
+	throw Error(String("TCP connection failure"), 0, address, IP, Port);
 }
 
 void
@@ -170,7 +171,7 @@ Modbus::read_discrete_input(uint8_t address, uint16_t num) {
 	packetlen = 6;
 	do_packet();
 	if (packetlen < 4) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	ret = packet[3];
 	mutex.unlock();
@@ -193,7 +194,7 @@ Modbus::read_discrete_inputs(uint8_t address, uint16_t num, uint16_t count) {
 	packetlen = 6;
 	do_packet();
 	if (packetlen < (4 + (count - 1) / 8)) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	for (i = 0; i < count; i++) {
 		if (packet[3 + i / 8] & (1 << (i & 0x07)))
@@ -220,7 +221,7 @@ Modbus::read_coil(uint8_t address, uint16_t num) {
 	packetlen = 6;
 	do_packet();
 	if (packetlen < 4) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	ret = packet[3];
 	mutex.unlock();
@@ -243,7 +244,7 @@ Modbus::read_coils(uint8_t address, uint16_t num, uint16_t count) {
 	packetlen = 6;
 	do_packet();
 	if (packetlen < (4 + (count - 1) / 8)) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	for (i = 0; i < count; i++) {
 		if (packet[3 + i / 8] & (1 << (i & 0x07)))
@@ -268,7 +269,7 @@ Modbus::write_coil(uint8_t address, uint16_t num, bool val) {
 	packetlen = 6;
 	do_packet();
 	if (packetlen < 6) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	mutex.unlock();
 }
@@ -294,7 +295,7 @@ Modbus::write_coils(uint8_t address, uint16_t num, SArray<bool> val) {
 	packetlen = 7 + (val.max + 8) / 8;
 	do_packet();
 	if (packetlen < 6) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	mutex.unlock();
 }
@@ -313,7 +314,7 @@ Modbus::read_input_register(uint8_t address, uint16_t num) {
 	packetlen = 6;
 	do_packet();
 	if (packetlen < 5) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	ret = (uint16_t)packet[3] << 8 | packet[4];
 	mutex.unlock();
@@ -336,7 +337,7 @@ Modbus::read_input_registers(uint8_t address, uint16_t num, uint16_t count) {
 	packetlen = 6;
 	do_packet();
 	if (packetlen < (3 + count * 2)) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	for (i = 0; i < count; i++) {
 		ret[i] = (uint16_t)packet[3 + 2 * i] << 8 | packet[4 + 2 * i];
@@ -360,7 +361,7 @@ Modbus::read_holding_register(uint8_t address, uint16_t num) {
 	packetlen = 6;
 	do_packet();
 	if (packetlen < 5) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	ret = (uint16_t)packet[3] << 8 | packet[4];
 	mutex.unlock();
@@ -383,7 +384,7 @@ Modbus::read_holding_registers(uint8_t address, uint16_t num, uint16_t count) {
 	packetlen = 6;
 	do_packet();
 	if (packetlen < (3 + count * 2)) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	for (i = 0; i < count; i++) {
 		ret[i] = (uint16_t)packet[3 + 2 * i] << 8 | packet[4 + 2 * i];
@@ -405,7 +406,7 @@ Modbus::write_register(uint8_t address, uint16_t num, uint16_t val) {
 	packetlen = 6;
 	do_packet();
 	if (packetlen < 6) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	mutex.unlock();
 }
@@ -429,7 +430,7 @@ Modbus::write_registers(uint8_t address, uint16_t num, SArray<uint16_t> val) {
 	packetlen = 7 + 2 * (val.max + 1);
 	do_packet();
 	if (packetlen < 6) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	mutex.unlock();
 }
@@ -457,7 +458,7 @@ Modbus::read_write_registers(uint8_t address, uint16_t rnum, uint16_t count, uin
 	packetlen = 12 + 2 * val.max;
 	do_packet();
 	if (packetlen < (3 + count * 2)) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	for (i = 0; i < count; i++) {
 		ret[i] = (uint16_t)packet[3 + 2 * i] << 8 | packet[4 + 2 * i];
@@ -506,7 +507,7 @@ Modbus::mask_write_register(uint8_t address, uint16_t num, uint16_t andval, uint
 	packetlen = 8;
 	do_packet();
 	if (packetlen < 8) {
-		throw ::Error(String("wrong response size"));
+		throw Error(String("wrong response size"), 0, address, IP, Port);
 	}
 	// TODO: fall back to read-modify-write
 	mutex.unlock();
@@ -519,7 +520,7 @@ Modbus::bwct_set_address(uint8_t address, uint8_t naddress, String serial) {
 	packet[1] = VENDOR_SET_ADDRESS;
 	packet[2] = naddress;
 	if (serial.length() < 10)
-		throw ::Error(String("Serial has wrong length"));
+		throw Error(String("Serial has wrong length"), 0, address, IP, Port);
 	bcopy(serial.c_str(), &packet[3], 10);
 	packetlen = 13;
 	do_packet();
