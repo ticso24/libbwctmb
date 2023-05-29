@@ -93,17 +93,19 @@ retry:
 	try {
 		res = bus->write(spacket, sizeof(header) + packetlen);
 		if (res != (ssize_t)sizeof(header) + packetlen)
-			goto failure;
+			throw Error(String("TCP write failure"), 0, address, IP, Port);
 
 		res = bus->read(header, sizeof(header));
 		if (res != sizeof(header))
-			goto failure;
+			throw Error(String("TCP read failure"), 0, address, IP, Port);
+
 		packetlen = header[5];
 		if (packetlen == 0)
 			throw Error(String("Invalid response"), 0, address, IP, Port);
 		res = bus->read(packet, packetlen);
 		if (res != packetlen)
-			goto failure;
+			throw Error(String("TCP read failure"), 0, address, IP, Port);
+
 		if (!ignore_sequence) {
 			if (header[0] != (sequence >> 8) ||
 			    header[1] != (sequence & 0xff)) {
@@ -111,7 +113,13 @@ retry:
 			}
 		}
 	} catch (...) {
-		goto failure;
+		if (ntry < retries) {
+			usleep(100);
+			ntry++;
+			reconnect();
+			goto retry;
+		}
+		throw;
 	}
 	if (packet[1] & 0x80) {
 		switch (packet[2]) {
@@ -139,14 +147,6 @@ retry:
 	}
 	return;
 
-failure:
-	if (ntry < retries) {
-		usleep(100);
-		ntry++;
-		reconnect();
-		goto retry;
-	}
-	throw Error(String("TCP connection failure"), 0, address, IP, Port);
 }
 
 void
