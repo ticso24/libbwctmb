@@ -48,6 +48,7 @@ private:
 	a_ptr<Network::Net> bus;
 	Mutex mtx_bus;
 	bool ignore_sequence;
+	uint16_t timeout;
 
 	void do_packet();
 	void reconnect();
@@ -94,6 +95,7 @@ public:
 		retries = 4;
 		sequence = getrandom();
 		ignore_sequence = false;
+		timeout = 2000;
 	}
 
 	void set_retries(int new_retries) {
@@ -101,6 +103,9 @@ public:
 	}
 	void set_ignore_sequence(bool new_ignore_sequence) {
 		ignore_sequence = new_ignore_sequence;
+	}
+	void set_timeout(uint16_t new_timeout) {
+		timeout = new_timeout;
 	}
 	bool read_discrete_input(uint8_t address, uint16_t num);
 	SArray<bool> read_discrete_inputs(uint8_t address, uint16_t num, uint16_t count);
