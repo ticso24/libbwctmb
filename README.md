@@ -8,9 +8,8 @@ For non TCP devices it is expected to run a bridge device or software, like the 
 [libbwct](https://github.com/ticso24/libbwct) is required
 
 ```sh
-./configure
+cmake .
 make
-make install
 ```
 
 ## Source Code
