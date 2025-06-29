@@ -35,7 +35,7 @@
 // TODO: add interleaving support
 // TODO: properly handle broadcast packets and don't parse results
 
-#include <bwctmb/bwctmb.h>
+#include "bwctmb.h"
 
 #define READ_COILS                              0x01
 #define READ_DISCRETE_INPUTS                    0x02
