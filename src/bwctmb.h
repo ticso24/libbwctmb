@@ -37,94 +37,99 @@
 
 #include <bwct/bwct.h>
 
-class Modbus : public Base {
-private:
-	uint8_t packet[256];
-	uint8_t packetlen;
-	uint8_t retries;
-	uint16_t sequence;
-	String IP;
-	String Port;
-	a_ptr<Network::Net> bus;
-	Mutex mtx_bus;
-	bool ignore_sequence;
-	uint16_t timeout;
+namespace bwct
+{
 
-	void do_packet();
-	void reconnect();
-
-public:
-	class Error : public ::Error {
-	public:
-		uint8_t mb_error;
-		uint8_t address;
+	class Modbus : public Base {
+	private:
+		uint8_t packet[256];
+		uint8_t packetlen;
+		uint8_t retries;
+		uint16_t sequence;
 		String IP;
 		String Port;
-		Error(const String& nmsg, uint8_t nmb_error, uint8_t naddress, const String& nIP, const String& nPort, const String& nrequest = "")
-		    : ::Error("") {
-			mb_error = nmb_error;
-			address = naddress;
+		std::unique_ptr<Network::Net> bus;
+		Mutex mtx_bus;
+		bool ignore_sequence;
+		uint16_t timeout;
+
+		void do_packet();
+		void reconnect();
+
+	public:
+		class Error : public bwct::Error {
+		public:
+			uint8_t mb_error;
+			uint8_t address;
+			String IP;
+			String Port;
+			Error(const String& nmsg, uint8_t nmb_error, uint8_t naddress, const String& nIP, const String& nPort, const String& nrequest = "")
+			    : bwct::Error("") {
+				mb_error = nmb_error;
+				address = naddress;
+				IP = nIP;
+				Port = nPort;
+				String fill;
+				if (!nrequest.empty()) {
+					fill = " ";
+				}
+				msg = S + "MB " + naddress + "@[" + nIP + "]:" + nPort + ": " + nrequest + fill + nmsg;
+			}
+			Error(const char* nmsg, uint8_t nmb_error, uint8_t naddress, const String& nIP, const String& nPort, const String& nrequest = "")
+			    : bwct::Error("") {
+				mb_error = nmb_error;
+				address = naddress;
+				IP = nIP;
+				Port = nPort;
+				String fill;
+				if (!nrequest.empty()) {
+					fill = " ";
+				}
+				msg = S + "MB " + naddress + "@[" + nIP + "]:" + nPort + ": " + nrequest + fill + nmsg;
+			}
+			uint8_t get_errno() {
+				return mb_error;
+			}
+		};
+
+		Modbus(const String& nIP, const String& nPort) {
 			IP = nIP;
 			Port = nPort;
-			String fill;
-			if (!nrequest.empty()) {
-				fill = " ";
-			}
-			msg = S + "MB " + naddress + "@[" + nIP + "]:" + nPort + ": " + nrequest + fill + nmsg;
+			retries = 4;
+			sequence = getrandom();
+			ignore_sequence = false;
+			timeout = 2000;
 		}
-		Error(const char* nmsg, uint8_t nmb_error, uint8_t naddress, const String& nIP, const String& nPort, const String& nrequest = "")
-		    : ::Error("") {
-			mb_error = nmb_error;
-			address = naddress;
-			IP = nIP;
-			Port = nPort;
-			String fill;
-			if (!nrequest.empty()) {
-				fill = " ";
-			}
-			msg = S + "MB " + naddress + "@[" + nIP + "]:" + nPort + ": " + nrequest + fill + nmsg;
+
+		void set_retries(int new_retries) {
+			retries = new_retries;
 		}
-		uint8_t get_errno() {
-			return mb_error;
+		void set_ignore_sequence(bool new_ignore_sequence) {
+			ignore_sequence = new_ignore_sequence;
 		}
+		void set_timeout(uint16_t new_timeout) {
+			timeout = new_timeout;
+		}
+		bool read_discrete_input(uint8_t address, uint16_t num);
+		SArray<bool> read_discrete_inputs(uint8_t address, uint16_t num, uint16_t count);
+		bool read_coil(uint8_t address, uint16_t num);
+		SArray<bool> read_coils(uint8_t address, uint16_t num, uint16_t count);
+		void write_coil(uint8_t address, uint16_t num, bool val);
+		void write_coils(uint8_t address, uint16_t num, SArray<bool> val);
+		uint16_t read_input_register(uint8_t address, uint16_t num);
+		SArray<uint16_t> read_input_registers(uint8_t address, uint16_t num, uint16_t count);
+		uint16_t read_holding_register(uint8_t address, uint16_t num);
+		SArray<uint16_t> read_holding_registers(uint8_t address, uint16_t num, uint16_t count);
+		void write_register(uint8_t address, uint16_t num, uint16_t val);
+		void write_registers(uint8_t address, uint16_t num, SArray<uint16_t> val);
+		String identification(uint8_t address, uint8_t num);
+		void mask_write_register(uint8_t address, uint16_t num, uint16_t andval, uint16_t orval);
+		SArray<uint16_t> read_write_registers(uint8_t address, uint16_t rnum, uint16_t count, uint16_t wnum, SArray<uint16_t> val);
+		void bwct_set_address(uint8_t address, uint8_t naddress, String serial);
+		String bwct_read_magcard(uint8_t address);
+		void bwct_fw_update(uint8_t address, const String& fwpath);
 	};
 
-	Modbus(const String& nIP, const String& nPort) {
-		IP = nIP;
-		Port = nPort;
-		retries = 4;
-		sequence = getrandom();
-		ignore_sequence = false;
-		timeout = 2000;
-	}
-
-	void set_retries(int new_retries) {
-		retries = new_retries;
-	}
-	void set_ignore_sequence(bool new_ignore_sequence) {
-		ignore_sequence = new_ignore_sequence;
-	}
-	void set_timeout(uint16_t new_timeout) {
-		timeout = new_timeout;
-	}
-	bool read_discrete_input(uint8_t address, uint16_t num);
-	SArray<bool> read_discrete_inputs(uint8_t address, uint16_t num, uint16_t count);
-	bool read_coil(uint8_t address, uint16_t num);
-	SArray<bool> read_coils(uint8_t address, uint16_t num, uint16_t count);
-	void write_coil(uint8_t address, uint16_t num, bool val);
-	void write_coils(uint8_t address, uint16_t num, SArray<bool> val);
-	uint16_t read_input_register(uint8_t address, uint16_t num);
-	SArray<uint16_t> read_input_registers(uint8_t address, uint16_t num, uint16_t count);
-	uint16_t read_holding_register(uint8_t address, uint16_t num);
-	SArray<uint16_t> read_holding_registers(uint8_t address, uint16_t num, uint16_t count);
-	void write_register(uint8_t address, uint16_t num, uint16_t val);
-	void write_registers(uint8_t address, uint16_t num, SArray<uint16_t> val);
-	String identification(uint8_t address, uint8_t num);
-	void mask_write_register(uint8_t address, uint16_t num, uint16_t andval, uint16_t orval);
-	SArray<uint16_t> read_write_registers(uint8_t address, uint16_t rnum, uint16_t count, uint16_t wnum, SArray<uint16_t> val);
-	void bwct_set_address(uint8_t address, uint8_t naddress, String serial);
-	String bwct_read_magcard(uint8_t address);
-	void bwct_fw_update(uint8_t address, const String& fwpath);
-};
+}
 
 #endif /* _BWCTMB */
