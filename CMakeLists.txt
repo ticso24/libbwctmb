@@ -4,12 +4,19 @@ project("bwctmb"
 	VERSION 0.21
 )
 
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-find_package(bwct CONFIG REQUIRED)
+find_package(bwct 0.22 REQUIRED)
+if(${bwct_FOUND})
+    #message(STATUS "Found BWCT: ${bwct_PREFIX}")
+endif()
 
-#configure_file(src/config.h.in src/config.h)
+# workarround until the bwct cmake library support works
+include_directories(/usr/local/include)
+#target_link_libraries(${BWCT_LIBRARIES})
 
 add_library(${PROJECT_NAME} STATIC)
 
